@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mapping Orientalism - Interactive Visualization</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+   * {
+     box-sizing: border-box;
+   }
+   
+   body {
+      margin: 0;
+      display: flex;
+      height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f8f9fa;
+      color: #2c3e50;
+      font-size: 14px;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    
+    /* ============ DARK MODE ============ */
+    body.dark-mode {
+      background: #1a202c;
+      color: #e2e8f0;
+    }
+    
+    body.dark-mode #sidebar,
+    body.dark-mode #details {
+      background: #2d3748;
+      border-color: #4a5568;
+      color: #e2e8f0;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    
+    body.dark-mode nav.tabs {
+      background: #1a202c;
+    }
+    
+    body.dark-mode nav.tabs button {
+      color: #a0aec0;
+    }
+    
+    body.dark-mode nav.tabs button:hover {
+      background: #2d3748;
+      color: #e2e8f0;
+    }
+    
+    body.dark-mode nav.tabs button.active {
+      background: #4a5568;
+      color: #e2e8f0;
+    }
+    
+    body.dark-mode .filter-group {
+      border-color: #4a5568;
+    }
+    
+    body.dark-mode .filter-group > summary {
+      background: #2d3748;
+      color: #e2e8f0;
+    }
+    
+    body.dark-mode .filter-group > summary:hover {
+      background: #374151;
+    }
+    
+    body.dark-mode .filter-group[open] > summary {
+      background: #374151;
+      color: #e2e8f0;
+      border-bottom-color: #4a5568;
+    }
+    
+    body.dark-mode .filter-group > div {
+      background: #2d3748;
+    }
+    
+    body.dark-mode select,
+    body.dark-mode input {
+      background: #374151;
+      border-color: #4a5568;
+      color: #e2e8f0;
+    }
+    
+    body.dark-mode select:focus,
+    body.dark-mode input:focus {
+      border-color: #63b3ed;
+      box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.1);
+    }
+    
+    body.dark-mode .expander {
+      background: #374151;
+      border-color: #4a5568;
+      color: #cbd5e0;
+    }
+    
+    body.dark-mode .expander:hover {
+      background: #4a5568;
+      color: #e2e8f0;
+    }
+    
+    body.dark-mode .content {
+      background: #1a202c;
+      border-left-color: #63b3ed;
+    }
+    
+    body.dark-mode #about-container {
+      background: #2d3748;
+      border-color: #4a5568;
+    }
+    
+    body.dark-mode #info-button {
+      border-color: #4a5568;
+      color: #cbd5e0;
+    }
+    
+    body.dark-mode #info-button:hover {
+      background: #374151;
+      color: #e2e8f0;
+    }
+    
+    body.dark-mode #custom-layer-list label {
+      background: #374151;
+      border-color: #4a5568;
+    }
+    
+    body.dark-mode #custom-layer-list label:hover {
+      background: #4a5568;
+    }
+    
+    body.dark-mode h2,
+    body.dark-mode h3,
+    body.dark-mode h4,
+    body.dark-mode h5 {
+      color: #e2e8f0;
+    }
+    
+    body.dark-mode hr {
+      border-top-color: #4a5568;
+    }
+    
+    body.dark-mode #loading-overlay {
+      background: rgba(26, 32, 44, 0.95);
+    }
+    
+    /* Dark mode toggle - sidebar içinde */
+    #dark-mode-toggle {
+      width: 100%;
+      margin: 0 0 1rem 0;
+      padding: 0.7rem 1rem;
+      background: transparent;
+      border: 1.5px solid #e2e8f0;
+      color: #4a5568;
+      cursor: pointer;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: none;
+    }
+
+    #dark-mode-toggle:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+      transform: none;
+      box-shadow: none;
+    }
+
+    body.dark-mode #dark-mode-toggle {
+      background: transparent;
+      border-color: #4a5568;
+      color: #cbd5e0;
+      box-shadow: none;
+    }
+
+    body.dark-mode #dark-mode-toggle:hover {
+      background: #374151;
+    }
+
+    #dark-mode-toggle .toggle-text {
+      flex: 1;
+      text-align: left;
+    }
+
+    #dark-mode-toggle #dark-mode-icon {
+      font-size: 1.2rem;
+    }
+        
+    /* ============ REST OF STYLES ============ */
+    #sidebar, #details {
+      background: #ffffff;
+      color: #2c3e50;
+      padding: 1.25rem;
+      overflow-y: auto;
+      border-right: 1px solid #e1e8ed;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+    }
+    
+    #sidebar { 
+      flex: 0 0 280px;
+      max-width: 280px;
+    }
+    
+    #map {
+      flex: 1 1 auto;
+      position: relative;
+      border-radius: 0;
+    }
+    
+    #details { 
+      flex: 0 0 320px;
+      max-width: 320px;
+      border-left: 1px solid #e1e8ed;
+      border-right: none;
+      box-shadow: -2px 0 8px rgba(0,0,0,0.04);
+    }
+    
+    nav.tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 1.5rem;
+      background: #f1f3f5;
+      padding: 4px;
+      border-radius: 8px;
+    }
+    
+    nav.tabs button {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      background: transparent;
+      color: #495057;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    
+    nav.tabs button:hover {
+      background: #e9ecef;
+      color: #212529;
+    }
+    
+    nav.tabs button.active {
+      background: #ffffff;
+      color: #1e293b;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    h2 {
+      margin: 0 0 1.25rem 0;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #1a202c;
+      letter-spacing: -0.02em;
+    }
+    
+    h4 {
+      margin: 1.5rem 0 0.75rem 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #2d3748;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.85rem;
+    }
+    
+    label {
+      font-weight: 500;
+      display: block;
+      margin-top: 0.85rem;
+      color: #4a5568;
+      font-size: 0.875rem;
+    }
+    
+    select[multiple], select, input[type="number"], input[type="text"], input[type="color"] {
+      width: 100%;
+      margin: 0.4rem 0;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.875rem;
+      border: 1.5px solid #e2e8f0;
+      background: #ffffff;
+      color: #2d3748;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    
+    select:focus, input:focus {
+      outline: none;
+      border-color: #3182ce;
+      box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+    }
+    
+    select[multiple] {
+      min-height: 120px;
+    }
+    
+    button {
+      width: 100%;
+      margin: 0.5rem 0;
+      padding: 0.7rem 1rem;
+      font-size: 0.9rem;
+      border: 1px solid #cbd5e0;
+      background: #f1f5f9;
+      color: #1e293b;
+      cursor: pointer;
+      font-weight: 600;
+      border-radius: 6px;
+      transition: background 0.2s ease, border-color 0.2s ease;
+      box-shadow: none;
+    }
+
+    button:hover {
+      background: #e2e8f0;
+      border-color: #94a3b8;
+    }
+
+    button:active {
+      background: #cbd5e0;
+    }
+
+    body.dark-mode button {
+      background: #374151;
+      border-color: #4a5568;
+      color: #e2e8f0;
+    }
+
+    body.dark-mode button:hover {
+      background: #4a5568;
+      border-color: #718096;
+    }
+    
+    .filter-group {
+      margin-bottom: 0.9rem;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+    
+    .filter-group:hover {
+      border-color: #cbd5e0;
+    }
+    
+    .filter-group > summary {
+      list-style: none;
+      cursor: pointer;
+      font-weight: 600;
+      padding: 0.75rem 1rem;
+      background: #f7fafc;
+      color: #2d3748;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    
+    .filter-group > summary::-webkit-details-marker {
+      display: none;
+    }
+    
+    .filter-group > summary::before {
+      content: "▶";
+      display: inline-block;
+      margin-right: 0.5rem;
+      transition: transform 0.2s ease;
+      font-size: 0.7rem;
+      color: #718096;
+    }
+    
+    .filter-group[open] > summary::before {
+      transform: rotate(90deg);
+    }
+    
+    .filter-group > summary:hover {
+      background: #edf2f7;
+    }
+    
+    .filter-group[open] > summary {
+      background: #edf2f7;
+      color: #1e293b;
+      border-bottom: 1.5px solid #cbd5e0;
+    }
+    
+    .filter-group > div {
+      padding: 1rem;
+      background: #ffffff;
+    }
+
+    /* ---- searchable multi-select filter widgets ---- */
+    .fw-search {
+      width: 100%;
+      margin: 0 0 0.5rem 0;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.85rem;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #2d3748;
+    }
+    .fw-options {
+      max-height: 170px;
+      overflow-y: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+    }
+    .fw-options label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #4a5568;
+      cursor: pointer;
+      border-bottom: 1px solid #f1f5f9;
+      word-break: break-word;
+    }
+    .fw-options label:last-child { border-bottom: none; }
+    .fw-options label:hover { background: #f7fafc; }
+    .fw-options label.hidden { display: none; }
+    .fw-options input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+      flex: 0 0 auto;
+      cursor: pointer;
+    }
+    .fw-empty { padding: 0.5rem 0.6rem; color: #94a3b8; font-size: 0.8rem; }
+
+    body.dark-mode .fw-search {
+      background: #374151;
+      border-color: #4a5568;
+      color: #e2e8f0;
+    }
+    body.dark-mode .fw-options { border-color: #4a5568; }
+    body.dark-mode .fw-options label { color: #cbd5e0; border-bottom-color: #374151; }
+    body.dark-mode .fw-options label:hover { background: #374151; }
+
+    /* ---- layer blocks (checkbox + collapsible settings) ---- */
+    .layer-block {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 0.6rem;
+      overflow: hidden;
+    }
+    .layer-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin: 0;
+      padding: 0.7rem 0.9rem;
+      font-weight: 600;
+      color: #2d3748;
+      background: #f7fafc;
+      cursor: pointer;
+    }
+    .layer-toggle input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+      transform: scale(1.15);
+      cursor: pointer;
+    }
+    .layer-settings > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 0.5rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #64748b;
+      user-select: none;
+    }
+    .layer-settings > summary::-webkit-details-marker { display: none; }
+    .layer-settings > summary::before {
+      content: "▶";
+      font-size: 0.6rem;
+      margin-right: 0.4rem;
+      color: #94a3b8;
+    }
+    .layer-settings[open] > summary::before { content: "▼"; }
+    .layer-toggle + .layer-settings { border-top: 1px solid #e2e8f0; }
+    .layer-settings > div { padding: 0.25rem 0.9rem 0.9rem; }
+
+    body.dark-mode .layer-block { border-color: #4a5568; }
+    body.dark-mode .layer-toggle { background: #374151; color: #e2e8f0; }
+    body.dark-mode .layer-toggle + .layer-settings { border-top-color: #4a5568; }
+    body.dark-mode .layer-settings > summary { color: #a0aec0; }
+
+    .expander {
+      background: #f7fafc;
+      padding: 0.6rem 0.75rem;
+      margin: 0.5rem 0;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      color: #4a5568;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+    
+    .expander:hover {
+      background: #edf2f7;
+      border-color: #cbd5e0;
+      color: #2d3748;
+    }
+    
+    .content {
+      display: none;
+      background: #f8fafc;
+      padding: 0.75rem;
+      border-left: 3px solid #3182ce;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      border-radius: 0 4px 4px 0;
+      line-height: 1.6;
+    }
+    
+    .highlight {
+      background: #fef3c7;
+      color: #92400e;
+      padding: 0.15rem 0.3rem;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    #info-button {
+      background: transparent;
+      border: 1.5px solid #e2e8f0;
+      color: #4a5568;
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 0.6rem 1rem;
+      margin-bottom: 1rem;
+      text-decoration: none;
+      font-weight: 500;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    
+    #info-button:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+      color: #2d3748;
+    }
+    
+    #about-container {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1.5px solid #e2e8f0;
+      background: #f8fafc;
+      padding: 0 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      line-height: 1.6;
+    }
+    
+    #about-container.open {
+      max-height: 400px;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+    
+    #about-container p {
+      margin: 0.75rem 0;
+      color: #4a5568;
+      font-size: 0.875rem;
+    }
+    
+    #about-container em {
+      color: #2d3748;
+      font-style: italic;
+    }
+
+    #loading-overlay {
+      display: flex;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #4a5568;
+    }
+    
+    #loading-overlay.hidden {
+      display: none;
+    }
+    
+    #loading-overlay::after {
+      content: "";
+      width: 40px;
+      height: 40px;
+      margin-left: 1rem;
+      border: 3px solid #e2e8f0;
+      border-top-color: #3182ce;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    small {
+      display: block;
+      color: #718096;
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+      font-style: italic;
+    }
+    
+    hr {
+      border: none;
+      border-top: 1.5px solid #e2e8f0;
+      margin: 1.5rem 0;
+    }
+    
+    ul {
+      padding-left: 1.5rem;
+      margin: 0.5rem 0;
+    }
+    
+    li {
+      margin: 0.4rem 0;
+      color: #4a5568;
+      line-height: 1.5;
+    }
+    
+    h3 {
+      color: #1a202c;
+      font-weight: 700;
+      font-size: 1.4rem;
+      margin: 0 0 0.5rem 0;
+    }
+    
+    h5 {
+      color: #2d3748;
+      font-weight: 600;
+      font-size: 1.05rem;
+      margin: 1.5rem 0 0.5rem 0;
+      padding-top: 1rem;
+      border-top: 1px solid #e2e8f0;
+    }
+    
+    #custom-layer-list {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0 0 0;
+    }
+    
+    #custom-layer-list li {
+      margin: 0.5rem 0;
+    }
+    
+    #custom-layer-list label {
+      display: flex;
+      align-items: center;
+      padding: 0.6rem 0.75rem;
+      background: #f7fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin: 0;
+    }
+    
+    #custom-layer-list label:hover {
+      background: #edf2f7;
+      border-color: #cbd5e0;
+    }
+    
+    #custom-layer-list input[type="checkbox"] {
+      margin: 0 0.75rem 0 0;
+      width: auto;
+      cursor: pointer;
+      transform: scale(1.2);
+    }
+    
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #f1f3f5;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e0;
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a0aec0;
+    }
+    
+    body.dark-mode ::-webkit-scrollbar-track {
+      background: #2d3748;
+    }
+    
+    body.dark-mode ::-webkit-scrollbar-thumb {
+      background: #4a5568;
+    }
+    
+    body.dark-mode ::-webkit-scrollbar-thumb:hover {
+      background: #718096;
+    }
+
+    /* Professional icons without emoji */
+    .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      margin-right: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #475569;
+      background: #e2e8f0;
+      border-radius: 3px;
+    }
+
+    .icon-filter::before { content: "F"; }
+    .icon-layer::before { content: "L"; }
+    .icon-info::before { content: "i"; }
+    .icon-stats::before { content: "Σ"; }
+    .icon-work::before { content: "W"; }
+    .icon-sentiment::before { content: "S"; }
+
+    /* Academic color palette */
+    :root {
+      --primary: #1e40af;
+      --secondary: #64748b;
+      --accent: #0891b2;
+      --success: #059669;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --light: #f8fafc;
+      --dark: #1e293b;
+    }
+
+    /* Professional typography */
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      letter-spacing: 0.01em;
+    }
+
+    h2, h3, h4, h5, button, label, .tabs button {
+      font-family: 'Inter', -apple-system, sans-serif;
+    }
+
+    /* Citation-ready formatting */
+    .citation {
+      font-size: 0.8rem;
+      color: #64748b;
+      font-style: italic;
+      border-left: 2px solid #cbd5e0;
+      padding-left: 0.5rem;
+      margin: 0.5rem 0;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="loading-overlay">
+    <div>Loading data...</div>
+  </div>
+  
+
+  <div id="sidebar">
+  
+    <button id="dark-mode-toggle">
+      <span class="toggle-text">Dark mode</span>
+      <span id="dark-mode-icon">Off</span>
+    </button>
+
+    <button id="info-button">
+      <span class="icon icon-info"></span>About this Interface
+    </button>
+    
+    <div id="about-container">
+      <p>
+        <strong>Research Context:</strong> This interactive visualization is part of the Master's thesis 
+        <em>"Mapping Orientalism: A Quantitative Study of Eighteenth-Century British Travel Writing"</em> 
+        by Enes Yılandiloğlu (University of Helsinki, 2025).
+      </p>
+      <p>
+        <strong>Data Source:</strong> Eighteenth Century Collections Online (ECCO), 
+        filtered for geographic entity mentions in travel narratives published 1700-1800.
+      </p>
+      <p>
+        <strong>Methodology:</strong> Named Entity Recognition (NER), sentiment analysis, 
+        and geographic information system (GIS) integration.
+      </p>
+      <p class="citation">
+        For citation: Yılandiloğlu, E. (2025). Mapping Orientalism: 
+        A Quantitative Study of Eighteenth-Century British Travel Writing. 
+        [Master's thesis, University of Helsinki].
+      </p>
+      <p>
+        <strong>Contact:</strong> enes.yilandiloglu@helsinki.fi
+      </p>
+    </div>
+
+    <nav class="tabs">
+      <button id="tab-filters" class="active">
+        <span class="icon icon-filter"></span>Filters
+      </button>
+      <button id="tab-layers">
+        <span class="icon icon-layer"></span>Layers
+      </button>
+    </nav>
+        
+    <!-- FILTERS TAB -->
+    <div id="pane-filters" class="tab-content active">
+      <h2>Filters</h2>
+      <p style="margin:0 0 1rem 0; color:#718096; font-size:0.8rem;">Click options to toggle; type to search within a filter.</p>
+
+      <details class="filter-group" open>
+        <summary>ECCO ID</summary>
+        <div class="fw" data-field="ecco_id">
+          <input type="text" class="fw-search" placeholder="Type to search..."/>
+          <div class="fw-options"></div>
+        </div>
+      </details>
+
+      <details class="filter-group">
+        <summary>ESTC ID</summary>
+        <div class="fw" data-field="estc_id">
+          <input type="text" class="fw-search" placeholder="Type to search..."/>
+          <div class="fw-options"></div>
+        </div>
+      </details>
+
+      <details class="filter-group">
+        <summary>Author</summary>
+        <div class="fw" data-field="authors">
+          <input type="text" class="fw-search" placeholder="Type to search..."/>
+          <div class="fw-options"></div>
+        </div>
+      </details>
+
+      <details class="filter-group">
+        <summary>Author Gender</summary>
+        <div class="fw" data-field="authors_gender">
+          <div class="fw-options"></div>
+        </div>
+      </details>
+
+      <details class="filter-group">
+        <summary>Decade</summary>
+        <div class="fw" data-field="publication_decade">
+          <input type="text" class="fw-search" placeholder="Type to search..."/>
+          <div class="fw-options"></div>
+        </div>
+      </details>
+
+      <details class="filter-group">
+        <summary>Place Type</summary>
+        <div class="fw" data-field="place_type">
+          <input type="text" class="fw-search" placeholder="Type to search..."/>
+          <div class="fw-options"></div>
+        </div>
+      </details>
+
+      <details class="filter-group">
+        <summary>Place Title</summary>
+        <div class="fw" data-field="place">
+          <input type="text" class="fw-search" placeholder="Type to search..."/>
+          <div class="fw-options"></div>
+        </div>
+      </details>
+
+      <details class="filter-group">
+        <summary>Entity Name</summary>
+        <div class="fw" data-field="merged_entity_text">
+          <input type="text" class="fw-search" placeholder="Type to search..."/>
+          <div class="fw-options"></div>
+        </div>
+      </details>
+
+      <details class="filter-group">
+        <summary>Short Title</summary>
+        <div class="fw" data-field="short_title">
+          <input type="text" class="fw-search" placeholder="Type to search..."/>
+          <div class="fw-options"></div>
+        </div>
+      </details>
+
+      <details class="filter-group">
+        <summary>Main Category</summary>
+        <div class="fw" data-field="main_category">
+          <input type="text" class="fw-search" placeholder="Type to search..."/>
+          <div class="fw-options"></div>
+        </div>
+      </details>
+
+      <details class="filter-group">
+        <summary>Sub Category</summary>
+        <div class="fw" data-field="sub_category">
+          <input type="text" class="fw-search" placeholder="Type to search..."/>
+          <div class="fw-options"></div>
+        </div>
+      </details>
+
+      <details class="filter-group">
+        <summary>Sentiment</summary>
+        <div class="fw" data-field="snippet_sentiment_label">
+          <div class="fw-options"></div>
+        </div>
+      </details>
+
+      <label>Year range</label>
+      <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+        <input type="number" id="yearMin" placeholder="Min"/>
+        <input type="number" id="yearMax" placeholder="Max"/>
+      </div>
+
+      <label>Full-text search</label>
+      <input type="text" id="term" placeholder="Search snippet text..."/>
+      <label>Search in</label>
+      <select id="sel_snip">
+        <option value="short">Short snippet</option>
+        <option value="wide">Wide snippet</option>
+        <option value="full">Full chunk</option>
+      </select>
+      <small id="search-status"></small>
+
+      <button id="reset">Reset all filters</button>
+      
+        <div id="filter-stats" style="margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1.5px solid #e2e8f0;">
+          <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Dataset Summary</h4>
+          <table style="width: 100%; font-size: 0.85rem; line-height: 2;">
+            <tr>
+              <td style="color: #64748b;">Total Records:</td>
+              <td style="text-align: right; font-weight: 600;"><span id="stat-records">0</span></td>
+            </tr>
+            <tr>
+              <td style="color: #64748b;">Unique Locations:</td>
+              <td style="text-align: right; font-weight: 600;"><span id="stat-locations">0</span></td>
+            </tr>
+            <tr>
+              <td style="color: #64748b;">Works Represented:</td>
+              <td style="text-align: right; font-weight: 600;"><span id="stat-works">0</span></td>
+            </tr>
+            <tr>
+              <td style="color: #64748b;">Authors:</td>
+              <td style="text-align: right; font-weight: 600;"><span id="stat-authors">0</span></td>
+            </tr>
+            <tr style="border-top: 1px solid #e2e8f0;">
+              <td style="color: #64748b; padding-top: 0.5rem;">Temporal Range:</td>
+              <td style="text-align: right; font-weight: 600; padding-top: 0.5rem;"><span id="stat-years">-</span></td>
+            </tr>
+          </table>
+        </div>
+    </div>
+
+    <!-- LAYERS TAB -->
+    <div id="pane-layers" class="tab-content">
+      <h2>Layers</h2>
+      <h4>Active Layers</h4>
+
+      <div class="layer-block">
+        <label class="layer-toggle"><input type="checkbox" class="layer-checkbox" data-layer="Count Heatmap"> Count Heatmap</label>
+        <details class="layer-settings">
+          <summary>Settings</summary>
+          <div>
+            <label>Radius <input type="number" id="heat-radius" value="40" min="1" max="100" step="1"></label>
+            <label>Blur <input type="number" id="heat-blur" value="20" min="1" max="50" step="1"></label>
+            <label>Opacity <input type="number" id="heat-opacity" value="0.4" min="0" max="1" step="0.1"></label>
+            <label>Intensity <input type="number" id="heat-intensity" value="1.5" min="0.1" max="5" step="0.1"></label>
+            <label>Gradient
+              <select id="heat-gradient-preset">
+                <option value="thermal">Thermal (Blue→Red)</option>
+                <option value="viridis">Viridis (Purple→Yellow)</option>
+                <option value="plasma" selected>Plasma (Blue→Pink→Yellow)</option>
+                <option value="inferno">Inferno (Black→Red→Yellow)</option>
+                <option value="cool">Cool (Cyan→Magenta)</option>
+              </select>
+            </label>
+          </div>
+        </details>
+      </div>
+
+      <div class="layer-block">
+        <label class="layer-toggle"><input type="checkbox" class="layer-checkbox" data-layer="Sentiment Layer"> Sentiment Layer</label>
+        <details class="layer-settings">
+          <summary>Settings</summary>
+          <div>
+            <label>Positive <input type="color" id="sentiment-positive-color" value="#10b981"></label>
+            <label>Neutral <input type="color" id="sentiment-neutral-color" value="#f59e0b"></label>
+            <label>Negative <input type="color" id="sentiment-negative-color" value="#ef4444"></label>
+            <label>Ring Size <input type="number" id="sentiment-size" value="4" min="1" max="50" step="1"></label>
+          </div>
+        </details>
+      </div>
+
+      <div class="layer-block">
+        <label class="layer-toggle"><input type="checkbox" class="layer-checkbox" data-layer="Density Layer"> Density Layer</label>
+        <details class="layer-settings">
+          <summary>Settings</summary>
+          <div>
+            <label>Opacity <input type="number" id="density-opacity" value="0.25" min="0" max="1" step="0.05"></label>
+            <label>Size Multiplier <input type="number" id="density-multiplier" value="3" min="1" max="10" step="0.5"></label>
+          </div>
+        </details>
+      </div>
+
+      <h4>Base Markers</h4>
+      <div class="layer-block">
+        <details class="layer-settings">
+          <summary>Marker style &amp; weighting</summary>
+          <div>
+            <label>Color <input type="color" id="marker-color" value="#1E88E5"></label>
+            <label>Base Size <input type="number" id="marker-size" value="3" min="1" max="20" step="1"></label>
+            <label>Size by
+              <select id="marker-weight-by">
+                <option value="uniform">Uniform (all same)</option>
+                <option value="mentions">Mention count</option>
+                <option value="works">Work count</option>
+                <option value="authors">Author count</option>
+              </select>
+            </label>
+            <label>Min size <input type="number" id="marker-size-min" value="2" min="1" max="10" step="1"></label>
+            <label>Max size <input type="number" id="marker-size-max" value="15" min="5" max="30" step="1"></label>
+            <small>Min/Max apply to weighted sizing only</small>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+  
+  <div id="map"></div>
+  
+  <div id="details">
+    <h2>Location Details</h2>
+    <div id="info">Click a point on the map...</div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+  <script src="./data.js"></script>
+  <script>
+  // ============================================
+  // LOAD DATA
+  // data.js holds a normalized startup payload (window.MAPPING). The wide/full
+  // snippet text and the search index are pulled lazily as <script> shards, so
+  // everything works both when index.html is opened directly (file://) and on
+  // GitHub Pages.
+  // ============================================
+  let rawData = [];
+  let currentData = [];
+  let CTX_SIZE = 1000, IDX_SHARDS = 96;
+
+  // --- lazy context: wide + full snippet text ---
+  window.__CTX = {};                 // docId -> [wideHtml, fullHtml]
+  const __ctxLoaded = new Set();
+  const __ctxPromise = {};
+  window.__ctxLoad = (bucket, obj) => { Object.assign(window.__CTX, obj); __ctxLoaded.add(bucket); };
+
+  // --- lazy search index: per field (short/wide/full), token -> [docId, ...] ---
+  window.__IDX = { short: {}, wide: {}, full: {} };
+  const __idxLoaded = new Set();        // key = "<field>:<bucket>"
+  const __idxPromise = {};
+  window.__idxLoad = (field, bucket, obj) => {
+    if (!window.__IDX[field]) window.__IDX[field] = {};
+    Object.assign(window.__IDX[field], obj);
+    __idxLoaded.add(field + ':' + bucket);
+  };
+
+  function __loadShard(src, cache, key) {
+    if (cache[key]) return cache[key];
+    cache[key] = new Promise(resolve => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = () => resolve(true);
+      s.onerror = () => resolve(false);   // missing shard => no data, don't hang
+      document.head.appendChild(s);
+    });
+    return cache[key];
+  }
+
+  function ensureContext(docId) {
+    const b = Math.floor(docId / CTX_SIZE);
+    if (__ctxLoaded.has(b)) return Promise.resolve();
+    return __loadShard(`./data/context/ctx_${b}.js`, __ctxPromise, b);
+  }
+
+  // FNV-1a 32-bit — MUST match the Python build's _fnv1a().
+  function idxBucket(token) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < token.length; i++) {
+      h ^= token.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+    return (h >>> 0) % IDX_SHARDS;
+  }
+
+  function ensureIdxBucket(field, b) {
+    const key = field + ':' + b;
+    if (__idxLoaded.has(key)) return Promise.resolve();
+    return __loadShard(`./data/index/${field}/idx_${b}.js`, __idxPromise, key);
+  }
+
+  try {
+    const M = window.MAPPING;
+    if (!M || !M.recs) throw new Error('data.js missing or MAPPING.recs undefined');
+    CTX_SIZE = M.meta.ctxSize;
+    IDX_SHARDS = M.meta.idxShards;
+    rawData = M.recs.map((r, docId) => {
+      const [pid, wid, ent, short, slab, ssc] = r;
+      const p = M.places[pid];   // [place, place_type, description, lat, lng]
+      const w = M.works[wid];    // [ecco_id, work_id, short_title, year, decade, authors, authors_gender, estc_id, main_category, sub_category]
+      return {
+        docId,
+        representative_latitude: p[3],
+        representative_longitude: p[4],
+        place: p[0], place_type: p[1], description: p[2],
+        ecco_id: w[0], work_id: w[1], short_title: w[2],
+        publication_year: w[3], publication_decade: w[4],
+        authors: w[5], authors_gender: w[6],
+        estc_id: w[7], main_category: w[8], sub_category: w[9],
+        merged_entity_text: ent,
+        snippet_short: short,
+        snippet_wide: null,   // lazy — filled by ensureContext()
+        chunk_text: null,     // lazy
+        snippet_sentiment_label: slab,
+        snippet_sentiment_score: ssc
+      };
+    });
+    console.log(`Loaded ${rawData.length} records from data.js`);
+    // NOTE: initializeApp() is called at the very END of this script, after all
+    // const/let declarations exist (avoids a temporal-dead-zone ReferenceError).
+    window.__DATA_READY = true;
+  } catch (error) {
+    console.error('Error:', error);
+    document.getElementById('loading-overlay').innerHTML =
+      '<div style="color: #e53e3e;">Error loading data. Please check console.</div>';
+  }
+
+  // ============================================
+  // FULL-TEXT SEARCH (index shards loaded on demand)
+  // ============================================
+  let searchResult = null;   // Set of docIds, or null when no active search
+
+  async function runSearch(term, mode) {
+    const toks = [...new Set((term.toLowerCase().match(/[a-z0-9]+/g) || []).filter(w => w.length >= 2))];
+    if (!toks.length) return null;
+    await Promise.all([...new Set(toks.map(idxBucket))].map(b => ensureIdxBucket(mode, b)));
+    const idx = window.__IDX[mode] || {};
+    let result = null;
+    for (const t of toks) {
+      const set = new Set(idx[t] || []);
+      result = (result === null) ? set : new Set([...result].filter(x => set.has(x)));
+      if (result.size === 0) break;
+    }
+    return result || new Set();
+  }
+
+  async function applySearch() {
+    const term = document.getElementById('term').value.trim();
+    const mode = document.getElementById('sel_snip').value;   // short | wide | full
+    const status = document.getElementById('search-status');
+    if (!term) { searchResult = null; status.textContent = ''; rebuild(); return; }
+    status.textContent = 'Searching...';
+    searchResult = await runSearch(term, mode);
+    status.textContent = `${searchResult.size.toLocaleString()} matching mentions`;
+    rebuild();
+  }
+
+  // ============================================
+  // DARK MODE
+  // ============================================
+  const darkModeToggle = document.getElementById('dark-mode-toggle');
+  const darkModeIcon = document.getElementById('dark-mode-icon');
+  
+  // Check saved preference
+  if (localStorage.getItem('darkMode') === 'enabled') {
+    document.body.classList.add('dark-mode');
+    darkModeIcon.textContent = 'On';
+  }
+  
+  darkModeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    
+    if (document.body.classList.contains('dark-mode')) {
+      darkModeIcon.textContent = 'On';
+      localStorage.setItem('darkMode', 'enabled');
+    } else {
+      darkModeIcon.textContent = 'Off';
+      localStorage.setItem('darkMode', 'disabled');
+    }
+  });
+
+  
+  // ============================================
+  // LAYER FUNCTIONS (EKSİK OLAN KISIMLAR)
+  // ============================================
+  let countHeatmap = null;
+  let sentimentLayer = null;
+  let densityLayer = null;
+
+  function buildCountHeatmap() {
+    if (countHeatmap) map.removeLayer(countHeatmap);
+    const radius = +document.getElementById('heat-radius').value || 40;
+    const blur = +document.getElementById('heat-blur').value || 20;
+    const opacity = +document.getElementById('heat-opacity').value || 0.4;
+    const intensity = +document.getElementById('heat-intensity').value || 1.5;
+    const gradient = gradientPresets[document.getElementById('heat-gradient-preset').value];
+    
+    const heatPoints = currentData.map(d => [d.representative_latitude, d.representative_longitude, intensity]);
+    countHeatmap = L.heatLayer(heatPoints, {radius, blur, minOpacity: opacity, max: 1.0, gradient});
+    
+    const cb = document.querySelector('.layer-checkbox[data-layer="Count Heatmap"]');
+    if (cb && cb.checked) countHeatmap.addTo(map);
+  }
+
+  function buildSentimentLayer() {
+    if (sentimentLayer) map.removeLayer(sentimentLayer);
+    const sentimentMap = new Map();
+    currentData.forEach(d => {
+      const key = d.representative_latitude + '|' + d.representative_longitude;
+      if (!sentimentMap.has(key)) sentimentMap.set(key, []);
+      sentimentMap.get(key).push(d.snippet_sentiment_label);
+    });
+
+    const markers = [];
+    sentimentMap.forEach((labels, locKey) => {
+      const [lat, lng] = locKey.split('|').map(Number);
+      const freq = labels.reduce((acc, lab) => { acc[lab] = (acc[lab] || 0) + 1; return acc; }, {});
+      let dominant = null, maxCount = -1;
+      Object.entries(freq).forEach(([lab, count]) => {
+        if (count > maxCount) { maxCount = count; dominant = lab; }
+      });
+
+      let color = '#94a3b8';
+      if (dominant === 'positive') color = document.getElementById('sentiment-positive-color').value;
+      else if (dominant === 'negative') color = document.getElementById('sentiment-negative-color').value;
+      else if (dominant === 'neutral') color = document.getElementById('sentiment-neutral-color').value;
+
+      const m = L.circleMarker([lat, lng], {
+        radius: sentimentSize, color, fill: false, weight: 2.5, opacity: 0.85
+      });
+      m.bindPopup(`<b>${dominant}</b><br/>Count: ${labels.length}`);
+      markers.push(m);
+    });
+
+    sentimentLayer = L.layerGroup(markers);
+    const cb = document.querySelector('.layer-checkbox[data-layer="Sentiment Layer"]');
+    if (cb && cb.checked) sentimentLayer.addTo(map);
+  }
+
+  function rebuildSentimentLayer() {
+    buildSentimentLayer();
+  }
+
+  function buildDensityLayer() {
+    if (densityLayer) map.removeLayer(densityLayer);
+    const opacity = +document.getElementById('density-opacity').value || 0.25;
+    const multiplier = +document.getElementById('density-multiplier').value || 3;
+    const densityMap = new Map();
+    currentData.forEach(d => {
+      const key = d.representative_latitude + '|' + d.representative_longitude;
+      densityMap.set(key, (densityMap.get(key) || 0) + 1);
+    });
+    
+    const circles = [];
+    densityMap.forEach((count, locKey) => {
+      const [lat, lng] = locKey.split('|').map(Number);
+      const c = L.circle([lat, lng], {
+        radius: (4 + (count * multiplier)) * 100,
+        color: '#3b82f6', fillColor: '#60a5fa',
+        fillOpacity: opacity, opacity: opacity + 0.15, weight: 2
+      });
+      c.bindPopup(`<b>Mentions:</b> ${count}`);
+      circles.push(c);
+    });
+    
+    densityLayer = L.layerGroup(circles);
+    const cb = document.querySelector('.layer-checkbox[data-layer="Density Layer"]');
+    if (cb && cb.checked) densityLayer.addTo(map);
+  }
+
+  function initializeLayers() {
+    buildCountHeatmap();
+    buildSentimentLayer();
+    buildDensityLayer();
+
+    // Wire the static layer checkboxes (each lives in the Layers tab above its
+    // own collapsible settings panel).
+    document.querySelectorAll('.layer-checkbox').forEach(cb => {
+      cb.addEventListener('change', function() {
+        const name = this.getAttribute('data-layer');
+        if (this.checked) {
+          if (name === 'Sentiment Layer') buildSentimentLayer();
+          else if (name === 'Count Heatmap') buildCountHeatmap();
+          else if (name === 'Density Layer') buildDensityLayer();
+        } else {
+          if (name === 'Sentiment Layer' && sentimentLayer) map.removeLayer(sentimentLayer);
+          else if (name === 'Count Heatmap' && countHeatmap) map.removeLayer(countHeatmap);
+          else if (name === 'Density Layer' && densityLayer) map.removeLayer(densityLayer);
+        }
+      });
+    });
+  }
+
+  function setupEventListeners() {
+    ['filters','layers'].forEach(name => {
+      document.getElementById(`tab-${name}`).addEventListener('click', () => {
+        ['filters','layers'].forEach(other => {
+          document.getElementById(`pane-${other}`).classList.toggle('active', other === name);
+          document.getElementById(`tab-${other}`).classList.toggle('active', other === name);
+        });
+      });
+    });
+
+    document.getElementById('info-button').addEventListener('click', () => {
+      document.getElementById('about-container').classList.toggle('open');
+    });
+
+    document.getElementById('marker-color').addEventListener('input', e => { markerColor = e.target.value; rebuild(); });
+    document.getElementById('marker-size').addEventListener('input', e => { markerSize = +e.target.value; rebuild(); });
+    document.getElementById('marker-weight-by').addEventListener('change', e => { markerWeightBy = e.target.value; rebuild(); });
+    document.getElementById('marker-size-min').addEventListener('input', e => { markerSizeMin = +e.target.value; rebuild(); });
+    document.getElementById('marker-size-max').addEventListener('input', e => { markerSizeMax = +e.target.value; rebuild(); });
+
+    document.getElementById('sentiment-positive-color').addEventListener('input', rebuildSentimentLayer);
+    document.getElementById('sentiment-neutral-color').addEventListener('input', rebuildSentimentLayer);
+    document.getElementById('sentiment-negative-color').addEventListener('input', rebuildSentimentLayer);
+    document.getElementById('sentiment-size').addEventListener('input', e => { sentimentSize = +e.target.value; buildSentimentLayer(); });
+    document.getElementById('heat-radius').addEventListener('input', buildCountHeatmap);
+    document.getElementById('heat-blur').addEventListener('input', buildCountHeatmap);
+    document.getElementById('heat-gradient-preset').addEventListener('change', buildCountHeatmap);
+    document.getElementById('heat-opacity').addEventListener('input', buildCountHeatmap);
+    document.getElementById('heat-intensity').addEventListener('input', buildCountHeatmap);
+    document.getElementById('density-opacity').addEventListener('input', buildDensityLayer);
+    document.getElementById('density-multiplier').addEventListener('input', buildDensityLayer);
+
+    // Year inputs re-filter the map.
+    ['yearMin', 'yearMax'].forEach(id => document.getElementById(id).onchange = rebuild);
+
+    // Type-to-search within each filter widget (hides non-matching options).
+    document.querySelectorAll('.fw-search').forEach(inp => {
+      inp.addEventListener('input', function() {
+        const q = this.value.trim().toLowerCase();
+        this.parentElement.querySelectorAll('.fw-options label').forEach(l => {
+          l.classList.toggle('hidden', q && !l.textContent.toLowerCase().includes(q));
+        });
+      });
+    });
+
+    // Full-text search box + mode selector (short / wide / full).
+    document.getElementById('term').oninput = debounce(applySearch, 300);
+    document.getElementById('sel_snip').addEventListener('change', applySearch);
+
+    document.getElementById('reset').onclick = resetAll;
+  }
+
+  function resetAll() {
+    document.querySelectorAll('.fw-options input:checked').forEach(c => c.checked = false);
+    document.querySelectorAll('.fw-search').forEach(i => { i.value = ''; i.dispatchEvent(new Event('input')); });
+    ['yearMin', 'yearMax', 'term'].forEach(id => document.getElementById(id).value = '');
+    searchResult = null;
+    document.getElementById('search-status').textContent = '';
+    rebuild();
+  }
+
+
+  // ============================================
+  // APPLICATION INITIALIZATION
+  // ============================================
+  function initializeApp() {
+    if (!rawData || rawData.length === 0) {
+      alert('No data loaded!');
+      return;
+    }
+    
+    currentData = rawData.slice();
+    
+    // Initialize UI
+    populateFilters();
+    initializeMap();
+    initializeLayers();
+    setupEventListeners();
+    
+    // Initial render
+    rebuild();
+    
+    // Hide loading
+    document.getElementById('loading-overlay').classList.add('hidden');
+    
+    console.log('Application initialized');
+  }
+
+  // [PASTE REST OF YOUR JAVASCRIPT CODE HERE - ALL THE FUNCTIONS]
+  // Just copy everything from your current code from line "let markerColor" 
+  // to the end, EXCEPT remove the "const rawData = __DATA__;" line
+
+  let markerColor = "#1E88E5";
+  let markerSize  = 3;
+  let sentimentSize = 4;
+  let markerWeightBy = 'uniform';  
+  let markerSizeMin = 2;            
+  let markerSizeMax = 15;
+
+  const gradientPresets = {
+    thermal:  {0.0:'blue', 0.25:'cyan', 0.5:'lime', 0.75:'yellow', 1.0:'red'},
+    viridis:  {0.0:'#440154', 0.25:'#31688e', 0.5:'#35b779', 0.75:'#fde724', 1.0:'#fde724'},
+    plasma:   {0.0:'#0d0887', 0.25:'#7e03a8', 0.5:'#cc4778', 0.75:'#f89540', 1.0:'#f0f921'},
+    inferno:  {0.0:'#000004', 0.25:'#57106e', 0.5:'#bc3754', 0.75:'#f98e09', 1.0:'#fcffa4'},
+    cool:     {0.0:'cyan', 0.5:'magenta', 1.0:'yellow'}
+  };
+
+  const uniq = arr => [...new Set(arr)].sort();
+
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+  
+  // Fields backed by a searchable multi-select widget (record property === data-field).
+  const FILTER_FIELDS = [
+    'ecco_id', 'estc_id', 'authors', 'publication_decade', 'place_type', 'place',
+    'merged_entity_text', 'short_title', 'main_category', 'sub_category',
+    'snippet_sentiment_label'
+  ];
+
+  function optionValues(field) {
+    return uniq(rawData.map(d => d[field]).filter(v => v != null && v !== ''));
+  }
+
+  function fillWidget(field, opts) {
+    const box = document.querySelector(`.fw[data-field="${field}"] .fw-options`);
+    if (!box) return;
+    box.innerHTML = '';
+    if (!opts.length) { box.innerHTML = '<div class="fw-empty">No values</div>'; return; }
+    const frag = document.createDocumentFragment();
+    opts.forEach(v => {
+      const lab = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = v;
+      cb.addEventListener('change', rebuild);
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode(' ' + v));
+      frag.appendChild(lab);
+    });
+    box.appendChild(frag);
+  }
+
+  function selectedValues(field) {
+    return [...document.querySelectorAll(`.fw[data-field="${field}"] .fw-options input:checked`)]
+      .map(c => c.value);
+  }
+
+  function populateFilters() {
+    FILTER_FIELDS.forEach(f => fillWidget(f, optionValues(f)));
+    fillWidget('authors_gender', ['male', 'female']);
+  }
+  
+  function initializeMap() {
+    window.map = L.map('map').setView(
+      [rawData[0].representative_latitude, rawData[0].representative_longitude],
+      5
+    );
+
+    const baseMaps = {
+      "World Shaded Relief": {
+        url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}",
+        attribution: "Esri, USGS, NOAA"
+      },
+      "World Terrain Base": {
+        url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}",
+        attribution: "Esri, USGS, DeLorme, NPS"
+      },
+      "World Physical Map": {
+        url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}",
+        attribution: "Esri, FAO, NOAA"
+      }
+    };
+    
+    const baseLayers = {};
+    Object.entries(baseMaps).forEach(([name, config]) => {
+      baseLayers[name] = L.tileLayer(config.url, {attribution: config.attribution});
+    });
+    baseLayers["World Terrain Base"].addTo(map);
+    
+    L.control.layers(baseLayers).addTo(map);
+  }
+  
+  
+function showDetails(d) {
+  const MAX_DISPLAY_MENTIONS = 5000;  // Sağ panelde max gösterilecek mention sayısı
+  
+  // Get all matches for this location
+  const allMatches = currentData.filter(r =>
+    r.representative_latitude === d.representative_latitude &&
+    r.representative_longitude === d.representative_longitude
+  );
+  
+  const totalMentions = allMatches.length;
+  
+  // Smart sampling: Eğer çok fazla mention varsa, her work'ten eşit oranda al
+  let matches;
+  if (totalMentions > MAX_DISPLAY_MENTIONS) {
+    // Group by work
+    const byWork = {};
+    allMatches.forEach(rec => {
+      const workKey = rec.ecco_id + '|' + rec.work_id;
+      if (!byWork[workKey]) byWork[workKey] = [];
+      byWork[workKey].push(rec);
+    });
+    
+    const works = Object.values(byWork);
+    const samplesPerWork = Math.ceil(MAX_DISPLAY_MENTIONS / works.length);
+    
+    // Take samples from each work proportionally
+    matches = works.flatMap(workMentions => {
+      if (workMentions.length <= samplesPerWork) {
+        return workMentions;
+      } else {
+        // Stratified sampling: take evenly distributed samples
+        const step = workMentions.length / samplesPerWork;
+        return Array.from({ length: samplesPerWork }, (_, i) => 
+          workMentions[Math.floor(i * step)]
+        );
+      }
+    }).slice(0, MAX_DISPLAY_MENTIONS);
+    
+    console.log(`Sampled ${matches.length} of ${totalMentions} mentions for display`);
+  } else {
+    matches = allMatches;
+  }
+
+
+  // Author analysis
+  const authorGenderMap = new Map();
+  matches.forEach(rec => {
+    const names = (rec.authors || '').split(';').map(s => s.trim()).filter(Boolean);
+    const genders = (rec.authors_gender || '').split(';').map(s => s.trim().toLowerCase()).filter(Boolean);
+    names.forEach((name, i) => {
+      authorGenderMap.set(name, genders[i] || 'unknown');
+    });
+  });
+
+  const uniqueAuthorGenderCounts = {};
+  authorGenderMap.forEach(g => {
+    uniqueAuthorGenderCounts[g] = (uniqueAuthorGenderCounts[g] || 0) + 1;
+  });
+
+  const mentionGenderCounts = {};
+  matches.forEach(rec => {
+    const genders = (rec.authors_gender || '').split(';').map(s => s.trim().toLowerCase()).filter(Boolean);
+    genders.forEach(g => {
+      mentionGenderCounts[g] = (mentionGenderCounts[g] || 0) + 1;
+    });
+  });
+
+  // Year analysis
+  const years = matches.map(r => r.publication_year).filter(y => y);
+  const decades = [...new Set(matches.map(r => Math.floor(r.publication_year / 10) * 10 + 's'))].sort();
+  
+  // Authors list
+  const authors = [...new Set(matches.map(r => r.authors).filter(a => a && a !== 'NaN'))].sort();
+  
+  // Work analysis
+  const eccoIds = [...new Set(matches.map(r => r.ecco_id))].sort();
+  
+  // Sentiment analysis
+  const sentimentFreq = matches.reduce((acc, r) => {
+    acc[r.snippet_sentiment_label] = (acc[r.snippet_sentiment_label] || 0) + 1;
+    return acc;
+  }, {});
+
+  // BUILD HTML - ACADEMIC STYLE
+  let html = `
+    <div style="border-bottom: 2px solid #1e293b; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+      <h3 style="margin: 0 0 0.25rem 0; color: #1e293b; font-size: 1.4rem; font-weight: 600;">${d.place}</h3>
+      <p style="margin: 0; color: #64748b; font-size: 0.9rem; font-style: italic;">
+        ${d.place_type || 'Geographic Entity'}
+      </p>
+            ${totalMentions > MAX_DISPLAY_MENTIONS ? `
+        <div style="margin-top: 0.75rem; padding: 0.75rem; background: #fef3c7; border: 1px solid #fde68a; border-radius: 4px; font-size: 0.8rem; color: #92400e;">
+          <strong>Sampling Notice:</strong> This location has ${totalMentions.toLocaleString()} total mentions.
+          Displaying a representative sample of ${matches.length.toLocaleString()} mentions 
+          (${((matches.length / totalMentions) * 100).toFixed(1)}% of total) 
+          with proportional representation from each work.
+        </div>
+      ` : ''}
+    </div>
+  `;
+
+  if (d.description && d.description !== 'nan' && d.description !== 'None') {
+    html += `
+      <div style="padding: 1rem; background: #f8fafc; border-left: 4px solid #94a3b8; margin-bottom: 1.5rem; font-size: 0.875rem; line-height: 1.7; color: #475569;">
+        ${d.description}
+      </div>
+    `;
+  }
+
+  // Recalculate stats from ALL matches (not sampled)
+  const allEccoIds = [...new Set(allMatches.map(r => r.ecco_id))];
+  const allAuthors = [...new Set(allMatches.map(r => r.authors).filter(a => a && a !== 'NaN'))];
+  const allDecades = [...new Set(allMatches.map(r => Math.floor(r.publication_year / 10) * 10 + 's'))].sort();
+  
+  const allAuthorGenderMap = new Map();
+  allMatches.forEach(rec => {
+    const names = (rec.authors || '').split(';').map(s => s.trim()).filter(Boolean);
+    const genders = (rec.authors_gender || '').split(';').map(s => s.trim().toLowerCase()).filter(Boolean);
+    names.forEach((name, i) => {
+      allAuthorGenderMap.set(name, genders[i] || 'unknown');
+    });
+  });
+
+  const allUniqueAuthorGenderCounts = {};
+  allAuthorGenderMap.forEach(g => {
+    allUniqueAuthorGenderCounts[g] = (allUniqueAuthorGenderCounts[g] || 0) + 1;
+  });
+
+  const allMentionGenderCounts = {};
+  allMatches.forEach(rec => {
+    const genders = (rec.authors_gender || '').split(';').map(s => s.trim().toLowerCase()).filter(Boolean);
+    genders.forEach(g => {
+      allMentionGenderCounts[g] = (allMentionGenderCounts[g] || 0) + 1;
+    });
+  });
+  
+  const allSentimentFreq = allMatches.reduce((acc, r) => {
+    acc[r.snippet_sentiment_label] = (acc[r.snippet_sentiment_label] || 0) + 1;
+    return acc;
+  }, {});
+
+  // BUILD HTML - Use allMatches stats for summary
+  html += `
+    <h4 style="margin: 1.5rem 0 1rem 0; font-size: 0.95rem; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">Statistical Overview</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+      <div style="padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+        <div style="font-size: 2rem; font-weight: 700; color: #1e293b; font-family: 'Georgia', serif;">${totalMentions}</div>
+        <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.25rem;">Total Mentions</div>
+      </div>
+      <div style="padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+        <div style="font-size: 2rem; font-weight: 700; color: #1e293b; font-family: 'Georgia', serif;">${allEccoIds.length}</div>
+        <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.25rem;">Distinct Works</div>
+      </div>
+      <div style="padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+        <div style="font-size: 2rem; font-weight: 700; color: #1e293b; font-family: 'Georgia', serif;">${allAuthors.length}</div>
+        <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.25rem;">Authors</div>
+      </div>
+      <div style="padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+        <div style="font-size: 2rem; font-weight: 700; color: #1e293b; font-family: 'Georgia', serif;">${allDecades.length}</div>
+        <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.25rem;">Decades</div>
+      </div>
+    </div>
+  `;
+
+  // METADATA - Use ALL data
+  html += `
+    <h4 style="margin: 1.5rem 0 1rem 0; font-size: 0.95rem; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">Metadata</h4>
+    <table style="width: 100%; font-size: 0.875rem; line-height: 2; border-collapse: collapse;">
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="color: #64748b; padding: 0.5rem 0; width: 45%;">Temporal Coverage:</td>
+        <td style="color: #1e293b; font-weight: 500; padding: 0.5rem 0;">${allDecades.length > 1 ? `${allDecades[0]} — ${allDecades[allDecades.length - 1]}` : allDecades[0] || 'N/A'}</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="color: #64748b; padding: 0.5rem 0;">Authors:</td>
+        <td style="color: #1e293b; font-weight: 500; padding: 0.5rem 0;">${allAuthors.length > 3 ? allAuthors.slice(0, 3).join('; ') + '; et al.' : allAuthors.join('; ') || 'N/A'}</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="color: #64748b; padding: 0.5rem 0;">Author Distribution:</td>
+        <td style="color: #1e293b; font-weight: 500; padding: 0.5rem 0;">${Object.entries(allUniqueAuthorGenderCounts).map(([g, c]) => `${g}: ${c}`).join('; ') || 'N/A'}</td>
+      </tr>
+      <tr>
+        <td style="color: #64748b; padding: 0.5rem 0;">Mention Distribution:</td>
+        <td style="color: #1e293b; font-weight: 500; padding: 0.5rem 0;">${Object.entries(allMentionGenderCounts).map(([g, c]) => `${g}: ${c}`).join('; ') || 'N/A'}</td>
+      </tr>
+    </table>
+  `;
+
+  // SENTIMENT - Use ALL data
+  html += `
+    <h4 style="margin: 1.5rem 0 1rem 0; font-size: 0.95rem; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">Sentiment Distribution</h4>
+  `;
+  
+  Object.entries(allSentimentFreq).forEach(([label, count]) => {
+    const percentage = ((count / totalMentions) * 100).toFixed(1);
+    const color = label === 'positive' ? '#059669' : label === 'negative' ? '#dc2626' : '#d97706';
+    
+    html += `
+      <div style="margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+          <span style="font-size: 0.85rem; text-transform: capitalize; font-weight: 600; color: #1e293b;">${label}</span>
+          <span style="font-size: 0.85rem; color: #64748b; font-family: 'Georgia', serif;">${count} <span style="font-weight: 400;">(${percentage}%)</span></span>
+        </div>
+        <div style="height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden;">
+          <div style="height: 100%; width: ${percentage}%; background: ${color}; transition: width 0.3s ease;"></div>
+        </div>
+      </div>
+    `;
+  });
+
+  // TEXTUAL EVIDENCE - Use SAMPLED data
+  html += `
+    <h4 style="margin: 2rem 0 1rem 0; font-size: 0.95rem; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">
+      Textual Evidence
+      ${totalMentions > MAX_DISPLAY_MENTIONS ? `<span style="font-weight: 400; font-size: 0.75rem; color: #64748b; text-transform: none; letter-spacing: normal;"> (Representative Sample)</span>` : ''}
+    </h4>
+  `;
+  // Group by work and sort chronologically
+  const byWork = {};
+  matches.forEach(rec => {
+    const key = rec.ecco_id + '|' + rec.work_id + '|' + rec.short_title + '|' + rec.publication_year;
+    if (!byWork[key]) byWork[key] = [];
+    byWork[key].push(rec);
+  });
+
+  const sortedWorks = Object.entries(byWork).sort((a, b) => {
+    const yearA = parseInt(a[0].split('|')[3]);
+    const yearB = parseInt(b[0].split('|')[3]);
+    return yearA - yearB;
+  });
+
+  const hl = (txt, ent) => {
+    if (!txt || !ent) return txt || '';
+    return txt.replace(new RegExp(ent, 'gi'), `<span class="highlight">${ent}</span>`);
+  };
+
+  sortedWorks.forEach(([key, recs], workIndex) => {
+    const [eccoId, workId, title, year] = key.split('|');
+    const first = recs[0];
+
+    html += `
+      <details class="work-section" style="margin-bottom: 1.5rem; border: 1px solid #cbd5e0; border-radius: 4px; overflow: hidden; background: #ffffff;" ${workIndex === 0 ? 'open' : ''}>
+        <summary style="padding: 0.75rem 1rem; background: #f8fafc; cursor: pointer; font-weight: 600; color: #1e293b; user-select: none; border-left: 4px solid #94a3b8;">
+          <span style="font-family: 'Georgia', serif; font-style: italic;">${title || 'Untitled Work'}</span>
+          <span style="font-size: 0.85rem; color: #64748b; font-weight: 400; font-style: normal;"> (${year})</span>
+        </summary>
+        
+        <div style="padding: 1.25rem; background: #ffffff;">
+          <div style="font-size: 0.85rem; color: #475569; margin-bottom: 1.25rem; padding: 1rem; background: #f8fafc; border-radius: 4px; border: 1px solid #e2e8f0;">
+            <div style="margin-bottom: 0.5rem; font-family: 'Georgia', serif;"><strong>ECCO ID:</strong> <span style="font-family: 'Courier New', monospace; color: #1e40af;">${eccoId}</span></div>
+            <div style="margin-bottom: 0.5rem;"><strong>Author(s):</strong> ${first.authors || 'Anonymous'}</div>
+            <div style="margin-bottom: 0.5rem;"><strong>Gender Attribution:</strong> ${first.authors_gender || 'Unattributed'}</div>
+            <div><strong>Mention Frequency:</strong> n = ${recs.length}</div>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <strong style="font-size: 0.875rem; color: #4a5568;">Sentiment Distribution:</strong>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+    `;
+
+    const workSentiments = recs.reduce((acc, r) => {
+      acc[r.snippet_sentiment_label] = (acc[r.snippet_sentiment_label] || 0) + 1;
+      return acc;
+    }, {});
+
+    Object.entries(workSentiments).forEach(([label, count]) => {
+      const color = label === 'positive' ? '#059669' : label === 'negative' ? '#dc2626' : '#d97706';
+      html += `
+        <span style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: ${color}20; color: ${color}; border-radius: 4px; font-size: 0.8rem; font-weight: 500;">
+          ${label}: ${count}
+        </span>
+      `;
+    });
+
+    html += `
+            </div>
+          </div>
+
+          <div style="border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+    `;
+
+    const seen = new Set();
+    const dedupedRecs = recs.filter(rec => {
+      const uniqKey = rec.snippet_short;
+      if (seen.has(uniqKey)) return false;
+      seen.add(uniqKey);
+      return true;
+    });
+
+    dedupedRecs.forEach((rec, mentionIndex) => {
+      const ent = rec.merged_entity_text;
+      const sentColor = rec.snippet_sentiment_label === 'positive' ? '#059669' : 
+                       rec.snippet_sentiment_label === 'negative' ? '#dc2626' : '#d97706';
+      
+      html += `
+        <div style="margin-bottom: 1.5rem; padding-bottom: 1rem; ${mentionIndex < dedupedRecs.length - 1 ? 'border-bottom: 1px dashed #e2e8f0;' : ''}">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <span style="display: inline-block; padding: 0.2rem 0.5rem; background: ${sentColor}20; color: ${sentColor}; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
+              ${rec.snippet_sentiment_label}
+            </span>
+            ${rec.snippet_sentiment_score ? `
+              <span style="font-size: 0.75rem; color: #718096;">
+                Score: ${rec.snippet_sentiment_score.toFixed(2)}
+              </span>
+            ` : ''}
+          </div>
+
+          <div style="padding: 0.75rem; background: #f8fafc; border-left: 3px solid ${sentColor}; border-radius: 4px; margin-bottom: 0.75rem;">
+            <p style="margin: 0; font-size: 0.875rem; line-height: 1.6; color: #2d3748;">
+              ${hl(rec.snippet_short || rec.snippet_wide, ent)}
+            </p>
+          </div>
+
+          <details class="lazy-details" style="margin-top: 0.5rem;" data-docid="${rec.docId}" data-kind="wide" data-ent="${ent}">
+            <summary style="cursor: pointer; font-size: 0.8rem; color: #3182ce; padding: 0.25rem 0; user-select: none;">
+              Expand wider context
+            </summary>
+            <div class="lazy-body" style="padding: 0.75rem; margin-top: 0.5rem; background: #f8fafc; border-radius: 4px; font-size: 0.85rem; line-height: 1.6; color: #4a5568;">
+              <em style="color:#94a3b8;">Loading...</em>
+            </div>
+          </details>
+
+          <details class="lazy-details" style="margin-top: 0.5rem;" data-docid="${rec.docId}" data-kind="full" data-ent="${ent}">
+            <summary style="cursor: pointer; font-size: 0.8rem; color: #3182ce; padding: 0.25rem 0; user-select: none;">
+              Expand full snippet
+            </summary>
+            <div class="lazy-body" style="padding: 0.75rem; margin-top: 0.5rem; background: #f8fafc; border-radius: 4px; font-size: 0.85rem; line-height: 1.6; color: #4a5568;">
+              <em style="color:#94a3b8;">Loading...</em>
+            </div>
+          </details>
+        </div>
+      `;
+    });
+
+    html += `
+          </div>
+        </div>
+      </details>
+    `;
+  });
+
+  document.getElementById('info').innerHTML = html;
+
+  // Lazy-load wide/full snippet text on first expand. Loading one snippet pulls
+  // its whole context bucket, so nearby mentions become available instantly too.
+  document.querySelectorAll('#info details.lazy-details').forEach(det => {
+    det.addEventListener('toggle', async function() {
+      if (!this.open || this.dataset.loaded) return;
+      this.dataset.loaded = '1';
+      const body = this.querySelector('.lazy-body');
+      const docId = +this.dataset.docid;
+      const kind = this.dataset.kind;
+      const ent = this.dataset.ent;
+      await ensureContext(docId);
+      const ctx = window.__CTX[docId];           // [wide, full]
+      const text = ctx ? (kind === 'wide' ? ctx[0] : ctx[1]) : '';
+      body.innerHTML = (text && text.trim())
+        ? hl(text, ent)
+        : '<em style="color:#94a3b8;">No text available.</em>';
+    });
+  });
+}
+
+  // Rebuild function
+  let markers = [];
+
+  function rebuild() {
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+
+    const sel = {};
+    FILTER_FIELDS.forEach(f => sel[f] = selectedValues(f));
+    const fg  = selectedValues('authors_gender');
+    const y0  = document.getElementById('yearMin').value || null;
+    const y1  = document.getElementById('yearMax').value || null;
+
+    const filtered = rawData.filter(d => {
+      if (searchResult !== null && !searchResult.has(d.docId)) return false;
+      for (const f of FILTER_FIELDS) {
+        const s = sel[f];
+        if (s.length && !s.includes(d[f])) return false;
+      }
+      if (fg.length) {
+        const has = (d.authors_gender || '').split(';').map(s => s.trim());
+        if (!fg.some(g => has.includes(g))) return false;
+      }
+      if (y0 && d.publication_year < +y0) return false;
+      if (y1 && d.publication_year > +y1) return false;
+      return true;
+    });
+
+    currentData = filtered;
+
+    const locationStats = new Map();
+    filtered.forEach(d => {
+      const key = d.representative_latitude + '|' + d.representative_longitude;
+      if (!locationStats.has(key)) {
+        locationStats.set(key, {
+          lat: d.representative_latitude,
+          lng: d.representative_longitude,
+          mentions: 0,
+          eccoIds: new Set(),
+          authors: new Set(),
+          records: []
+        });
+      }
+      const stat = locationStats.get(key);
+      stat.mentions += 1;
+      stat.eccoIds.add(d.ecco_id);
+      (d.authors || '').split(';').forEach(auth => {
+        const trimmed = auth.trim();
+        if (trimmed && trimmed !== 'NaN') stat.authors.add(trimmed);
+      });
+      stat.records.push(d);
+    });
+
+    let minWeight = Infinity, maxWeight = -Infinity;
+    if (markerWeightBy !== 'uniform') {
+      locationStats.forEach(stat => {
+        let weight;
+        if (markerWeightBy === 'mentions') weight = stat.mentions;
+        else if (markerWeightBy === 'works') weight = stat.eccoIds.size;
+        else if (markerWeightBy === 'authors') weight = stat.authors.size;
+        
+        if (weight < minWeight) minWeight = weight;
+        if (weight > maxWeight) maxWeight = weight;
+      });
+    }
+
+    locationStats.forEach((stat, key) => {
+      let radius = markerSize;
+      
+      if (markerWeightBy !== 'uniform') {
+        let weight;
+        if (markerWeightBy === 'mentions') weight = stat.mentions;
+        else if (markerWeightBy === 'works') weight = stat.eccoIds.size;
+        else if (markerWeightBy === 'authors') weight = stat.authors.size;
+        
+        if (maxWeight > minWeight) {
+          const normalized = (weight - minWeight) / (maxWeight - minWeight);
+          radius = markerSizeMin + (normalized * (markerSizeMax - markerSizeMin));
+        } else {
+          radius = markerSizeMin;
+        }
+      }
+      
+      const m = L.circleMarker([stat.lat, stat.lng], {
+        radius: radius,
+        color: markerColor,
+        fill: true,
+        fillOpacity: 0.7,
+        weight: 1.5
+      }).addTo(map).on('click', () => showDetails(stat.records[0]));
+      
+      markers.push(m);
+    });
+
+    buildCountHeatmap();
+    rebuildSentimentLayer();
+    buildDensityLayer();
+    updateFilterStats();
+  }
+
+  function updateFilterStats() {
+    const uniqueLocations = new Set(currentData.map(d => 
+      d.representative_latitude + '|' + d.representative_longitude
+    )).size;
+    
+    const uniqueWorks = new Set(currentData.map(d => d.ecco_id)).size;
+    
+    const uniqueAuthors = new Set();
+    currentData.forEach(d => {
+      (d.authors || '').split(';').forEach(a => {
+        const t = a.trim();
+        if (t && t !== 'NaN') uniqueAuthors.add(t);
+      });
+    });
+    
+    const years = currentData.map(d => d.publication_year).filter(y => y);
+    const yearRange = years.length > 0 
+      ? `${Math.min(...years)} - ${Math.max(...years)}`
+      : '-';
+    
+    document.getElementById('stat-records').textContent = currentData.length.toLocaleString();
+    document.getElementById('stat-locations').textContent = uniqueLocations.toLocaleString();
+    document.getElementById('stat-works').textContent = uniqueWorks.toLocaleString();
+    document.getElementById('stat-authors').textContent = uniqueAuthors.size.toLocaleString();
+    document.getElementById('stat-years').textContent = yearRange;
+  }
+
+  // ============================================
+  // START THE APP
+  // Runs last, so every const/let above is initialized before populateFilters,
+  // initializeMap, rebuild, etc. are invoked.
+  // ============================================
+  if (window.__DATA_READY) {
+    initializeApp();
+  }
+</script>
+
+</body>
+</html>
