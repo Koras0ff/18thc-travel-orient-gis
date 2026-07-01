@@ -575,21 +575,42 @@
     }
     
     #about-container.open {
-      max-height: 400px;
+      max-height: 70vh;
       overflow-y: auto;
       padding: 1rem;
     }
-    
+
     #about-container p {
       margin: 0.75rem 0;
       color: #4a5568;
       font-size: 0.875rem;
     }
-    
+
     #about-container em {
       color: #2d3748;
       font-style: italic;
     }
+
+    #about-container h4.manual {
+      margin: 1.1rem 0 0.4rem 0;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #2d3748;
+    }
+    #about-container ul {
+      margin: 0.35rem 0 0.75rem 0;
+      padding-left: 1.1rem;
+    }
+    #about-container li {
+      font-size: 0.85rem;
+      color: #4a5568;
+      line-height: 1.5;
+      margin: 0.3rem 0;
+    }
+    body.dark-mode #about-container h4.manual { color: #e2e8f0; }
+    body.dark-mode #about-container li { color: #cbd5e0; }
 
     #loading-overlay {
       display: flex;
@@ -807,25 +828,72 @@
     <div id="about-container">
       <p>
         <strong>Research Context:</strong> This interactive visualization is part of the Master's thesis 
-        <em>"Mapping Orientalism: A Quantitative Study of Eighteenth-Century British Travel Writing"</em> 
-        by Enes Yılandiloğlu (University of Helsinki, 2025).
+        Yilandiloglu, E. (2025). <em>Mapping Orientalism: A quantitative study of eighteenth-century British travel writing</em> [Master’s thesis, University of Helsinki].
       </p>
       <p>
         <strong>Data Source:</strong> Eighteenth Century Collections Online (ECCO), 
-        filtered for geographic entity mentions in travel narratives published 1700-1800.
+        filtered for geographic entity mentions in travel narratives published 1700-1800. Because the data is OCR'd, you may encounter some noisy passages. Also, since the place names were linked to locations automatically, there may be erroneously linked mentions.
       </p>
       <p>
         <strong>Methodology:</strong> Named Entity Recognition (NER), sentiment analysis, 
         and geographic information system (GIS) integration.
       </p>
       <p class="citation">
-        For citation: Yılandiloğlu, E. (2025). Mapping Orientalism: 
-        A Quantitative Study of Eighteenth-Century British Travel Writing. 
+        For citation: Yılandiloğlu, E. (2025). Mapping Orientalism:
+        A Quantitative Study of Eighteenth-Century British Travel Writing.
         [Master's thesis, University of Helsinki].
       </p>
       <p>
         <strong>Contact:</strong> enes.yilandiloglu@helsinki.fi
       </p>
+
+      <hr>
+      <p style="font-weight:700; color:#1a202c; margin:0.5rem 0;">How to use this interface</p>
+
+      <h4 class="manual">The map</h4>
+      <p>Each point marks a place mentioned in the corpus. <strong>Click a point</strong> to open its full details in the right-hand panel. The map always reflects your current filters and search. Marker size can be made proportional to how often a place is mentioned (see <em>Layers → Base Markers</em>).</p>
+
+      <h4 class="manual">Filters tab</h4>
+      <ul>
+        <li>In each filter, click a value to select it, click again to deselect. You can select several values.</li>
+        <li>Within one filter, selected values are combined with <strong>OR</strong> (any match); across different filters they are combined with <strong>AND</strong> (all must match).</li>
+        <li>Use a filter's <strong>search box</strong> to narrow a long list — e.g. type an ECCO ID, ESTC ID, place, or category, then click the value you want.</li>
+        <li><strong>Year range</strong> limits results to a publication-year window.</li>
+        <li><strong>Reset all filters</strong> clears every selection and the search.</li>
+        <li>The <strong>Dataset Summary</strong> at the bottom updates live (records, locations, works, authors, temporal range).</li>
+      </ul>
+
+      <h4 class="manual">Full-text search</h4>
+      <ul>
+        <li>The <strong>Full-text search</strong> box finds mentions whose text contains your term; results are combined with your active filters.</li>
+        <li><strong>Search in</strong> chooses which text layer is searched: <em>Short snippet</em>, <em>Wide snippet</em>, or <em>Full chunk</em> (see the snippet types below).</li>
+        <li>Multi-word queries return mentions that contain <strong>all</strong> the words. A running match count is shown beneath the box.</li>
+      </ul>
+
+      <h4 class="manual">Layers tab</h4>
+      <ul>
+        <li><strong>Active Layers</strong> — tick <em>Count Heatmap</em>, <em>Sentiment Layer</em>, or <em>Density Layer</em> to add them to the map. Each has a collapsible <em>Settings</em> panel directly beneath its checkbox (heatmap radius/blur/gradient, sentiment ring colours, density opacity, etc.).</li>
+        <li><strong>Base Markers</strong> — set marker colour and size, and choose <em>Size by</em> to scale markers by mention, work, or author count.</li>
+        <li>All layers recompute from the data currently shown by your filters and search.</li>
+      </ul>
+
+      <h4 class="manual">Right panel — Location Details</h4>
+      <p>Clicking a point fills this panel with, in order: the place name, type and description; a <strong>Statistical Overview</strong> (total mentions, distinct works, authors, decades); <strong>Metadata</strong> (temporal coverage, authors, author/mention gender distribution); a <strong>Sentiment Distribution</strong> bar chart; and the <strong>Textual Evidence</strong> — the actual mentions grouped by work and ordered chronologically.</p>
+
+      <h4 class="manual">The three snippet views</h4>
+      <p>Every mention is available at three text scopes:</p>
+      <ul>
+        <li><strong>Short snippet</strong> — sentence-level: the single sentence in which the mention occurs. This is shown by default and is the quickest to read.</li>
+        <li><strong>Wide snippet</strong> (<em>Expand wider context</em>) — a broad passage spanning roughly ten sentences before to ten sentences after the mention. This is the fullest context and the largest text. This can be useful when you search for a term that does not co-occur with a place name but mentioned in the adjacent sentences.</li>
+        <li><strong>Full snippet</strong> (<em>Expand full snippet</em>) — the 128-token text chunk the mention was extracted from during processing.</li>
+      </ul>
+      <p>In each mention the entity is <span class="highlight">highlighted</span>, and its sentiment label and score are shown above the text.</p>
+      <p>
+  For further technical details, please see 
+  <a href="http://hdl.handle.net/10138/602337">
+    Yılandiloğlu, E. (2025). <em>Mapping Orientalism: A quantitative study of eighteenth-century British travel writing</em> [Master’s thesis, University of Helsinki].
+  </a>
+</p>
     </div>
 
     <nav class="tabs">
